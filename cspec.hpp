@@ -16,7 +16,7 @@
 
 
 #define cspec_describe(group_title, examples) uva::cspec::test_group* CONCATENATE(test_line_, __LINE__) =  new uva::cspec::test_group(group_title, { examples })
-#define it(test_title, test_body) new uva::cspec::test(test_title, test_body)
+#define it(test_title, test_body) new uva::cspec::test(test_title, test_body),
 
 namespace uva
 {
@@ -117,3 +117,5 @@ namespace uva
         };
     };
 };
+
+using namespace uva::cspec;
