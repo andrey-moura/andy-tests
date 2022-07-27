@@ -12,21 +12,16 @@ add_library(uva-cspec
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
-#top level project should include uva dependencies
-if(EXISTS ${CSPEC_SOURCE_FILE})
+function(cspec_configure project_name source_dir libraries)
 
-	set(CSPEC_SOURCE_FOLDER ${CMAKE_SOURCE_DIR}/cspec)
-	set(CSPEC_SOURCE_FILE 	${CSPEC_SOURCE_FOLDER}/cspec.cpp)
-
-	message(STATUS "Initializing tests: ${CMAKE_PROJECT_NAME}-cspec")
-	message(STATUS "Tests folder: ${CSPEC_SOURCE_FOLDER}")
+	message(STATUS "Initializing tests: ${project_name}-cspec")
+	message(STATUS "Tests folder: ${source_dir}/cspec")
 
 	#create tests for parent project
-	add_executable(${CMAKE_PROJECT_NAME}-cspec ${CSPEC_SOURCE_FILE})
+	add_executable(${project_name}-cspec ${source_dir}/cspec/cspec.cpp)
 
 	#link this library with parent's tests project
-	target_link_libraries(${CMAKE_PROJECT_NAME}-cspec uva-cspec)
+	target_link_libraries(${project_name}-cspec uva-cspec ${libraries})
 
-	target_compile_definitions(${CMAKE_PROJECT_NAME}-cspec PUBLIC -DCSPEC_FOLDER=${CSPEC_SOURCE_FILE})
-
-endif()
+	target_compile_definitions(${project_name}-cspec PUBLIC -DCSPEC_FOLDER="${source_dir}/cspec")
+endfunction()
