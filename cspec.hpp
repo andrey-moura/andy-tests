@@ -5,6 +5,7 @@
 #include <format>
 #include <filesystem>
 #include <sstream>
+#include <typeinfo>
 
 #include <string.hpp>
 
@@ -58,6 +59,10 @@ namespace uva
         class exist
         {
         
+        };
+        template<typename throw_type>
+        class throw_matcher
+        {
         };
         template<typename T>
         class expect
@@ -179,8 +184,30 @@ namespace uva
                 return expected;
             }
 
-        };
+            template<typename throw_type>
+            friend const expect<T>& operator<<(const expect<T>& expected, const throw_matcher<throw_type>& matcher)
+            {
+                bool is_match = false;
 
+                try {
+                   (*expected.m_expected)();
+                } catch(throw_type& t) {
+                    is_match = true;
+                }
+
+                bool passed = is_match ? expected.m_expect_result : !expected.m_expect_result;
+                
+                if(!passed) {
+                    if( expected.m_expect_result ) {
+                        throw test_not_passed(std::format("Expected {} to throw {}, but could not catch it", typeid(T).name(), typeid(throw_type).name()));
+                    } else {
+                        throw test_not_passed(std::format("Expected {} to not throw {}, but one was caught", typeid(T).name(), typeid(throw_type).name()));
+                    }
+                }
+
+                return expected;
+            }
+        };
         class core
         {
         public:
@@ -251,5 +278,7 @@ using namespace uva::cspec;
 #define to to_match() <<
 #define to_not to_not_match() <<
 #define exist exist()
+#define throw_a(x) throw_matcher<x>()
+#define throw_an(x) throw_matcher<x>()
 #define before_all_tests(body) new uva::cspec::before_all(body),
 #define before_each_test(body) new uva::cspec::before_each(body),
