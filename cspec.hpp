@@ -12,8 +12,15 @@
 #define CONCATENATE_DIRECT(s1, s2) s1##s2
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
 
+#ifdef WIN32
+    #define DISABLE_WARNINGS_MESSAGES _CrtSetDbgFlag(0);
+#else
+    #define DISABLE_WARNINGS_MESSAGES
+#endif
+
 #define cspec_configure() \
     int main() {\
+        DISABLE_WARNINGS_MESSAGES\
         uva::cspec::temp_folder = CSPEC_TEMP_FOLDER;\
         uva::cspec::core::run_tests();\
         return 0;\
@@ -33,6 +40,11 @@ namespace uva
     {
         extern std::filesystem::path temp_folder;
         class test_group;
+
+        void puts(const std::string& output);
+        #ifdef UVA_DATABASE_AVAILABLE
+            void puts(const uva::database::basic_active_record& output);
+        #endif
 
         class test_not_passed : public std::runtime_error
         {
@@ -63,6 +75,26 @@ namespace uva
         template<typename throw_type>
         class throw_matcher
         {
+        };
+        class log_on_cout
+        {
+        public:
+            log_on_cout(const std::vector<std::string>& _logs)
+                : logs(_logs)
+            {
+
+            }
+            log_on_cout(std::string& log)
+                : logs({ log })
+            {
+
+            }
+            log_on_cout(const char* log)
+                : logs({ std::string(log) })
+            {
+
+            }
+            std::vector<std::string> logs;
         };
         template<typename T>
         class expect
@@ -169,9 +201,9 @@ namespace uva
 
                         if(!passed) {
                             if( expected.m_expect_result ) {
-                                throw test_not_passed(std::format("Expected \"COUNT(*) {}\" or directory to be > 0, but it was {}", expected.m_expected->to_sql(), count));
+                                throw test_not_passed(std::format("Expected \"SELECT COUNT(*) {}\" to be > 0, but it was {}", const_cast<T*>(expected.m_expected)->select("").to_sql(), count));
                             } else {
-                                throw test_not_passed(std::format("Expected \"COUNT(*) {}\" or directory to be 0, but it was {}", expected.m_expected->to_sql(), count));
+                                throw test_not_passed(std::format("Expected \"SELECT COUNT(*) {}\" to be 0, but it was {}", const_cast<T*>(expected.m_expected)->select("").to_sql(), count));
                             }
                         }
                     }
@@ -202,6 +234,60 @@ namespace uva
                         throw test_not_passed(std::format("Expected {} to throw {}, but could not catch it", typeid(T).name(), typeid(throw_type).name()));
                     } else {
                         throw test_not_passed(std::format("Expected {} to not throw {}, but one was caught", typeid(T).name(), typeid(throw_type).name()));
+                    }
+                }
+
+                return expected;
+            }
+
+            friend const expect<T>& operator<<(const expect<T>& expected, const log_on_cout& matcher)
+            {
+                bool is_match = false;
+
+                std::streambuf *coutbuf = std::cout.rdbuf();
+
+                std::stringstream stream;
+                std::cout.rdbuf(stream.rdbuf());
+
+                try {
+                    (*expected.m_expected)();
+                } catch(std::exception& e)
+                {
+                    std::cout.rdbuf(coutbuf);
+                    throw e;
+                    return expected;
+                }
+
+                std::cout.rdbuf(coutbuf);
+                std::string line;
+
+                std::string original_str = stream.str();
+
+                size_t count = 0;
+
+                while(std::getline(stream, line) && matcher.logs.size())
+                {
+                    if(!matcher.logs.size() && count != 0) {
+                        break;
+                    }
+
+                    if(line == matcher.logs.front())
+                    {
+                        const_cast<log_on_cout&>(matcher).logs.erase(matcher.logs.begin());
+                    }
+                }
+
+                if(!matcher.logs.size()) {
+                    is_match = true;
+                }
+
+                bool passed = is_match ? expected.m_expect_result : !expected.m_expect_result;
+                
+                if(!passed) {
+                    if( expected.m_expect_result ) {
+                        throw test_not_passed(std::format("Expected to find line \"{}\" in \"{}\", but 0 matches where found.", matcher.logs.front(), original_str));
+                    } else {
+                        throw test_not_passed(std::format("Expected to NOT find line \"{}\" in \"{}\", but at least 1 matches where found.", matcher.logs.front(), original_str));
                     }
                 }
 

@@ -20,8 +20,11 @@ function(cspec_configure project_name source_dir libraries)
 	message(STATUS "Tests folder: ${tests_folder}")
 
 	file(GLOB_RECURSE test_files CONFIGURE_DEPENDS 
-		"${tests_folder}/*_spec.hpp"
-		"${tests_folder}/*_spec.cpp"
+		${tests_folder}/*_spec.cpp
+		${tests_folder}/*_spec.hpp
+		${tests_folder}/*_spec.c
+		${tests_folder}/*_spec.h
+
 	)
 
 	list (APPEND test_files "${tests_folder}/cspec.cpp")

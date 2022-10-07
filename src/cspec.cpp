@@ -9,6 +9,28 @@
 
 std::filesystem::path uva::cspec::temp_folder;
 
+//CSPEC BEGIN
+
+#ifdef UVA_DATABASE_AVAILABLE
+void uva::cspec::puts(const uva::database::basic_active_record& output)
+{
+    puts(output.to_s());
+}
+#endif
+
+void uva::cspec::puts(const std::string& output)
+{
+    std::cout.clear();
+    std::cerr.clear();
+    std::clog.clear();
+
+    std::cout << output << std::endl;
+
+    std::cout.setstate(std::ios_base::failbit);
+    std::cerr.setstate(std::ios_base::failbit);
+    std::clog.setstate(std::ios_base::failbit);
+}
+
 //CORE BEGIN
 
 std::vector<uva::cspec::test_group*>& uva::cspec::core::get_groups()
@@ -49,9 +71,11 @@ void uva::cspec::core::run_tests()
                     //disable cout to not print garbage while printing tests output
                     std::cout.setstate(std::ios_base::failbit);
                     std::cerr.setstate(std::ios_base::failbit);
+                    std::clog.setstate(std::ios_base::failbit);
                     test->m_body();
                     std::cout.clear();
                     std::cerr.clear();
+                    std::clog.clear();
 
                     std::cout << "\t" << uva::console::color(uva::console::color_code::green) << test->m_name << std::endl;
                 } catch(uva::cspec::test_not_passed& e)
