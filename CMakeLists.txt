@@ -35,7 +35,7 @@ function(cspec_configure project_name source_dir libraries)
 	add_executable(${project_name}-cspec ${test_files})
 
 	#link this library with parent's tests project
-	target_link_libraries(${project_name}-cspec uva-cspec uva-console ${libraries})
+	target_link_libraries(${project_name}-cspec uva-cspec uva-console uva-faker ${libraries})
 
 	get_target_property(OUT ${project_name}-cspec LINK_LIBRARIES)
 	message(STATUS "Libraries linked to tests: ${OUT}")
