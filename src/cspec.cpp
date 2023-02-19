@@ -209,4 +209,6 @@ void uva::cspec::test_group::do_test() const
     if(is_root) {
         std::cout << std::endl;
     }
+    
+    --identation_level;
 }
