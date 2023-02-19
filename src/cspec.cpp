@@ -5,6 +5,9 @@
 
 #include <cspec.hpp>
 
+using namespace uva;
+using namespace console;
+
 //EXTERN VARIABLES
 
 std::filesystem::path uva::cspec::temp_folder;
@@ -16,8 +19,7 @@ static size_t failures = 0;
 static size_t identation_size = 4;
 static size_t identation_level = 0;
 
-using namespace uva;
-using namespace console;
+cspec::test_group* last_group = nullptr;
 
 //CSPEC BEGIN
 
@@ -71,13 +73,7 @@ void uva::cspec::core::run_tests()
     auto elapsed = uva::diagnostics::measure_function([&]() {
         for(const auto& test_group : groups)
         {
-            identation_level = 0;
-
-            std::cout << test_group->m_name << std::endl;
-
             test_group->do_test();
-
-            std::cout << std::endl;
         }
     });
 
@@ -151,12 +147,18 @@ void uva::cspec::test_group::do_test() const
         m_beforeAll->body();
     }
 
+    if(is_root) {
+        identation_level = 0;
+    }
+
+    if(is_group) {
+        print_identation();
+        std::cout << m_name << std::endl;
+    }
+
     for(const uva::cspec::test_base* test : tests)
     {
-        if(is_group && !is_root) {
-            print_identation();
-            std::cout << m_name << std::endl;
-
+        if(is_group) {
             if(m_beforeEach) {
                 m_beforeEach->body((cspec::test*)test);
             }
@@ -202,5 +204,9 @@ void uva::cspec::test_group::do_test() const
                 log_success(__test->m_name);
             }
         }
+    }
+
+    if(is_root) {
+        std::cout << std::endl;
     }
 }
