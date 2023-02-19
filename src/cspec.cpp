@@ -9,6 +9,16 @@
 
 std::filesystem::path uva::cspec::temp_folder;
 
+std::vector<std::string> failed_messages;
+
+static size_t examples = 0;
+static size_t failures = 0;
+static size_t identation_size = 4;
+static size_t identation_level = 0;
+
+using namespace uva;
+using namespace console;
+
 //CSPEC BEGIN
 
 #ifdef UVA_DATABASE_AVAILABLE
@@ -41,11 +51,11 @@ std::vector<uva::cspec::test_group*>& uva::cspec::core::get_groups()
 
 void uva::cspec::core::run_tests()
 {
-    std::vector<std::string> failed_messages;
     std::vector<uva::cspec::test_group*> groups = uva::cspec::core::get_groups();
 
-    size_t examples = 0;
-    size_t failures = 0;
+    examples = 0;
+    failures = 0;
+    failed_messages.clear();
 
     if(std::filesystem::exists(uva::cspec::temp_folder)) {
         //delete the temp directory
@@ -61,42 +71,11 @@ void uva::cspec::core::run_tests()
     auto elapsed = uva::diagnostics::measure_function([&]() {
         for(const auto& test_group : groups)
         {
+            identation_level = 0;
+
             std::cout << test_group->m_name << std::endl;
 
-            test_group->do_test([&](const uva::cspec::test* test)
-            {
-                examples++;
-
-                try {
-                    //disable cout to not print garbage while printing tests output
-                    std::cout.setstate(std::ios_base::failbit);
-                    std::cerr.setstate(std::ios_base::failbit);
-                    std::clog.setstate(std::ios_base::failbit);
-                    test->m_body();
-                    std::cout.clear();
-                    std::cerr.clear();
-                    std::clog.clear();
-
-                    std::cout << "\t" << uva::console::color(uva::console::color_code::green) << test->m_name << std::endl;
-                } catch(uva::cspec::test_not_passed& e)
-                {
-                    std::cout.clear();
-                    std::cerr.clear();
-                    failures++;
-                    std::cout << "\t" << uva::console::color(uva::console::color_code::red) << test->m_name << std::endl;
-
-                    failed_messages.push_back(std::format("{} {}\nTest resulted in following error:\n{}", test_group->m_name, test->m_name, e.what()));
-                }
-                catch(std::exception& e)
-                {
-                    std::cout.clear();
-                    std::cerr.clear();
-                    failures++;
-                    std::cout << "\t" << uva::console::color(uva::console::color_code::red) << test->m_name << std::endl;
-
-                    failed_messages.push_back(std::format("{} {}\nTest thrown following exception:\n{}", test_group->m_name, test->m_name, e.what()));
-                }
-            });
+            test_group->do_test();
 
             std::cout << std::endl;
         }
@@ -124,9 +103,9 @@ uva::cspec::test::test(const std::string& name, const std::function<void()> body
     tests.push_back(this);
 }
 
-void uva::cspec::test::do_test(std::function<void(const uva::cspec::test*)> _body) const
+void uva::cspec::test::do_test() const
 {
-   _body(this);
+   m_body();
 }
 
 //TEST GROUP BEGIN
@@ -155,22 +134,73 @@ uva::cspec::test_group::test_group(const std::string& name, const std::vector<uv
     is_root = _is_root;
 }
 
-void uva::cspec::test_group::do_test(std::function<void(const uva::cspec::test*)> _body) const
+std::string identation;
+void print_identation(size_t add = 0)
+{
+    size_t current_identation_size = identation_size*(identation_level+add);
+    if(identation.size() != current_identation_size) {
+        identation.resize(current_identation_size, ' ');
+    }
+
+    std::cout << identation;
+}
+
+void uva::cspec::test_group::do_test() const
 {
     if(m_beforeAll) {
         m_beforeAll->body();
     }
+
     for(const uva::cspec::test_base* test : tests)
     {
         if(is_group && !is_root) {
-            std::cout << "\t" << m_name << std::endl;
-            std::cout << "\t";
+            print_identation();
+            std::cout << m_name << std::endl;
 
             if(m_beforeEach) {
-                m_beforeEach->body((uva::cspec::test*)test);
+                m_beforeEach->body((cspec::test*)test);
             }
         }
 
-        test->do_test(_body);
+        if(test->is_group) {
+            //recurse
+            ++identation_level;
+            test->do_test();
+        } else {
+            //execute test
+            //disable cout to not print garbage while printing tests output
+            std::cout.setstate(std::ios_base::failbit);
+            std::cerr.setstate(std::ios_base::failbit);
+            std::clog.setstate(std::ios_base::failbit);
+
+            cspec::test* __test = ((cspec::test*)test);
+
+            std::string error_message;
+            try {
+                __test->m_body();
+            } catch(uva::cspec::test_not_passed& e)
+            {
+                failures++;
+                error_message = std::format("{}\nTest resulted in following error:\n{}", __test->m_name, e.what());
+            }
+            catch(std::exception& e)
+            {
+                failures++;
+                error_message = std::format("{}\nTest thrown following exception:\n{}", __test->m_name, e.what());
+            }
+
+            std::cout.clear();
+            std::cerr.clear();
+            std::clog.clear();
+
+            print_identation(1);
+
+            if(error_message.size()) {
+                failed_messages.push_back(error_message);
+                log_error(__test->m_name);
+            } else {
+                log_success(__test->m_name);
+            }
+        }
     }
 }

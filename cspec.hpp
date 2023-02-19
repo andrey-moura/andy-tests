@@ -28,6 +28,7 @@
 
 #define cspec_describe(group_title, examples) uva::cspec::test_group* CONCATENATE(test_line_, __LINE__) =  new uva::cspec::test_group(group_title, { examples }, true)
 #define context(group_title, examples) new uva::cspec::test_group(group_title, { examples }),
+#define describe(group_title, examples) new uva::cspec::test_group(group_title, { examples }),
 #define it(test_title, test_body) new uva::cspec::test(test_title, test_body),
 
 #ifdef UVA_DATABASE_AVAILABLE
@@ -306,7 +307,7 @@ namespace uva
         {
         public:
             std::vector<const test_base*> tests;
-            virtual void do_test(std::function<void(const test*)> _body) const = 0;
+            virtual void do_test() const = 0;
             bool is_group = false;
             bool is_root = false;
             bool is_before_all = false;
@@ -320,7 +321,7 @@ namespace uva
         public:
             test() = default;
             test(const std::string& name, const std::function<void()> body);
-            virtual void do_test(std::function<void(const test*)> _body) const override;
+            virtual void do_test() const override;
         };
         struct before_each : public test_base
         {
@@ -332,7 +333,7 @@ namespace uva
                 is_before_each = true;
             }
 
-            virtual void do_test(std::function<void(const test*)> _body) const override {};
+            virtual void do_test() const override {};
         };
         struct before_all : public test_base
         {
@@ -344,7 +345,7 @@ namespace uva
                 is_before_all = true;
             }
 
-            virtual void do_test(std::function<void(const test*)> _body) const override {};
+            virtual void do_test() const override {};
         };
         class test_group : public test_base
         {
@@ -354,7 +355,7 @@ namespace uva
             const before_each* m_beforeEach = nullptr;
         public:
             test_group(const std::string& name, const std::vector<test_base*>& tests, bool is_root = false);
-            virtual void do_test(std::function<void(const test*)> _body) const override;
+            virtual void do_test() const override;
         };
     };
 };
