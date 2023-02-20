@@ -8,6 +8,9 @@
 #include <typeinfo>
 
 #include <string.hpp>
+#include <binary.hpp>
+
+#undef min
 
 #define CONCATENATE_DIRECT(s1, s2) s1##s2
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
@@ -96,6 +99,17 @@ namespace uva
 
             }
             std::vector<std::string> logs;
+        };
+        template<typename compare_type>
+        class point_to_mem_block_equal_to
+        {
+            public:
+            point_to_mem_block_equal_to(const compare_type& __compare)
+                : compare(__compare)
+            {
+
+            }
+            compare_type compare;
         };
         template<typename T>
         class expect
@@ -290,6 +304,60 @@ namespace uva
                     } else {
                         throw test_not_passed(std::format("Expected to NOT find line \"{}\" in \"{}\", but at least 1 matches where found.", matcher.logs.front(), original_str));
                     }
+                }
+
+                return expected;
+            }
+            template<typename compare_type>
+            friend const expect<T>& operator<<(const expect<T>& expected, const point_to_mem_block_equal_to<compare_type>& matcher)
+            {
+                const compare_type* p_compare = &matcher.compare;
+                const size_t amount_to_cmp = sizeof(compare_type);
+                bool is_match = memcmp(*expected.m_expected, p_compare, amount_to_cmp) == 0;
+
+                bool passed = is_match ? expected.m_expect_result : !expected.m_expect_result;
+
+                if(!passed) {
+                    std::string error_msg;
+                    if( expected.m_expect_result ) {
+                        error_msg = std::format("Expected memory block at {} to be equal to memory block at {}, but it was not.\nThey were:\n", (void*)expected.m_expected, (void*)p_compare);
+                    } else {
+                        error_msg = std::format("Expected memory block at {} to NOT be equal to memory block at {}, but it was equal.\nThey were:\n", (void*)expected.m_expected, (void*)p_compare);
+                    }
+                    const size_t line_len = 8;
+                    const size_t line_count = 4;
+                    size_t bytes_to_display = std::min(amount_to_cmp, line_len*line_count);
+                    size_t bytes_displayed = 0;
+
+                    for(size_t line = 0; line < line_count; ++line) {
+                        size_t line_start = bytes_displayed;
+                        for(size_t current_byte = 0; current_byte < line_len; ++ current_byte) 
+                        {
+                            if(bytes_displayed+current_byte >= bytes_to_display) {
+                                break;
+                            }
+
+                            error_msg += uva::binary::to_hex_string(((uint8_t*)expected.m_expected)+line_start+current_byte, 1);
+                            error_msg += " ";
+                        }
+                        error_msg += "    ";
+                        for(size_t current_byte = 0; current_byte < line_len; ++ current_byte) 
+                        {
+                            if(bytes_displayed+current_byte >= bytes_to_display) {
+                                break;
+                            }
+
+                            error_msg += uva::binary::to_hex_string(((uint8_t*)p_compare)+line_start+current_byte, 1);
+                            error_msg += " ";
+                        }
+                        bytes_displayed+=line_len;
+                        if(bytes_displayed >= bytes_to_display) {
+                            break;
+                        }
+                        error_msg += "\n";
+                    }
+
+                    throw test_not_passed(error_msg);
                 }
 
                 return expected;
