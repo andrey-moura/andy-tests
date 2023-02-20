@@ -101,10 +101,10 @@ namespace uva
             std::vector<std::string> logs;
         };
         template<typename compare_type>
-        class point_to_mem_block_equal_to
+        class point_to_mem_block_equal_of
         {
             public:
-            point_to_mem_block_equal_to(const compare_type& __compare)
+            point_to_mem_block_equal_of(const compare_type& __compare)
                 : compare(__compare)
             {
 
@@ -317,7 +317,7 @@ namespace uva
                 return expected;
             }
             template<typename compare_type>
-            friend const expect<T>& operator<<(const expect<T>& expected, const point_to_mem_block_equal_to<compare_type>& matcher)
+            friend const expect<T>& operator<<(const expect<T>& expected, const point_to_mem_block_equal_of<compare_type>& matcher)
             {
                 const compare_type* p_compare = &matcher.compare;
                 const size_t amount_to_cmp = sizeof(compare_type);
