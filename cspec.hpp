@@ -181,11 +181,19 @@ namespace uva
                         std::string expected_str = uva::string::join(*matcher.m_expected, ',');
                         std::string got_str = uva::string::join(*expected.m_expected, ',');
 
-                        throw test_not_passed(std::format("Expected {{ {} }}\ngot      {{ {} }}", expected_str, got_str));
+                        if(expected.m_expect_result) {
+                            throw test_not_passed(std::format("Expected {{ {} }}\ngot      {{ {} }}", expected_str, got_str));
+                        } else {
+                            throw test_not_passed(std::format("Expected NOT {{ {} }}\ngot          {{ {} }}", expected_str, got_str));
+                        }
 
                     } else 
                     {
-                       throw test_not_passed(std::format("Expected {}\ngot      {}", *matcher.m_expected, *expected.m_expected));
+                        if(expected.m_expect_result) {
+                            throw test_not_passed(std::format("Expected {}\ngot      {}", *matcher.m_expected, *expected.m_expected));
+                        } else {
+                            throw test_not_passed(std::format("Expected NOT {}\ngot          {}", *matcher.m_expected, *expected.m_expected));
+                        }
                     }
                 }
 
