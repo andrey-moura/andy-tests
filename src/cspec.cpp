@@ -16,7 +16,7 @@ std::vector<std::string> failed_messages;
 
 static size_t examples = 0;
 static size_t failures = 0;
-static size_t identation_size = 4;
+static size_t identation_size = 2;
 static size_t identation_level = 0;
 
 cspec::test_group* last_group = nullptr;
@@ -116,7 +116,7 @@ uva::cspec::test_group::test_group(const std::string& name, const std::vector<uv
 
     std::vector<uva::cspec::test_base*> tests_removed_befores = uva::string::select(_tests, [this](uva::cspec::test_base* test){
         if(!test) return false;
-        
+
         if(test->is_before_all) {
             m_beforeAll = (uva::cspec::before_all*)test;
         }
@@ -171,6 +171,7 @@ void uva::cspec::test_group::do_test() const
             ++identation_level;
             test->do_test();
         } else {
+            examples++;
             //execute test
             //disable cout to not print garbage while printing tests output
             std::cout.setstate(std::ios_base::failbit);
@@ -184,12 +185,10 @@ void uva::cspec::test_group::do_test() const
                 __test->m_body();
             } catch(uva::cspec::test_not_passed& e)
             {
-                failures++;
                 error_message = std::format("{}\nTest resulted in following error:\n{}", __test->m_name, e.what());
             }
             catch(std::exception& e)
             {
-                failures++;
                 error_message = std::format("{}\nTest thrown following exception:\n{}", __test->m_name, e.what());
             }
 
@@ -200,6 +199,7 @@ void uva::cspec::test_group::do_test() const
             print_identation(1);
 
             if(error_message.size()) {
+                failures++;
                 failed_messages.push_back(error_message);
                 log_error(__test->m_name);
             } else {
