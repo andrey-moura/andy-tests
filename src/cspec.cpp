@@ -115,6 +115,8 @@ uva::cspec::test_group::test_group(const std::string& name, const std::vector<uv
     }
 
     std::vector<uva::cspec::test_base*> tests_removed_befores = uva::string::select(_tests, [this](uva::cspec::test_base* test){
+        if(!test) return false;
+        
         if(test->is_before_all) {
             m_beforeAll = (uva::cspec::before_all*)test;
         }
