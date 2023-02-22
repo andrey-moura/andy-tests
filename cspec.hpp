@@ -7,6 +7,7 @@
 #include <sstream>
 #include <typeinfo>
 
+#include <core.hpp>
 #include <string.hpp>
 #include <binary.hpp>
 
@@ -136,6 +137,50 @@ namespace uva
                 this_non_const->m_expect_result = false;
                 return *this;
             }
+            template<typename T>
+            static std::string format_t(const std::basic_string<T>& str)
+            {
+                return std::format("\"{}\"", str);
+            }
+            template<typename T>
+            static std::string format_t(const T* t)
+            {
+                return std::format("({}*){}", typeid(T).name(), (void*)t);
+            }
+            static std::string format_t(nullptr_t)
+            {
+                return "nullptr";
+            }
+            static std::string format_t(const uva::core::var& v)
+            {
+                if(v.type == var::var_type::string) {
+                    return std::format("\"{}\"", v.as<var::var_type::string>());
+                } else {
+                    return std::format("{}", v.to_s());
+                }
+            }
+            template<typename T>
+            static std::string format_t(const std::vector<T>& array)
+            {
+                std::string s = "{ ";
+
+                for(size_t i = 0; i < array.size(); ++i)  {
+                    s += std::format("{}", array[i]);
+
+                    if(i < array.size()-1) {
+                        s += ", ";
+                    }
+                }
+
+                s = " }";
+
+                return s;
+            }
+            template<typename T>
+            static std::string format_t(const T& t)
+            {
+                return std::format("{}", t);
+            }
             template<typename OtherT>
             friend const expect<T>& operator<<(const expect<T>& expected, const eq<OtherT>& matcher)
             {
@@ -145,10 +190,12 @@ namespace uva
                 bool is_match;
 
                 const constexpr bool expect_is_container = uva::string::is_container<T>::value;
-                const constexpr bool match_is_container = uva::string::is_container<OtherT>::value;
-                const constexpr bool expect_is_string = std::is_same<std::string, T>::value;
-                const constexpr bool match_is_string = std::is_same<std::string, OtherT>::value;
-                const constexpr bool is_container = expect_is_container && match_is_container && !expect_is_string && !match_is_string;
+                const constexpr bool match_is_container  = uva::string::is_container<OtherT>::value;
+                const constexpr bool expect_is_string    = std::is_same<std::string, T>::value;
+                const constexpr bool match_is_string     = std::is_same<std::string, OtherT>::value;
+                const constexpr bool is_container        = expect_is_container && match_is_container && !expect_is_string && !match_is_string;
+                const constexpr bool expect_is_pointer   = uva::string::is_pointer<T>::value;
+                const constexpr bool compare_is_pointer  = uva::string::is_pointer<OtherT>::value;
                 
                 if constexpr (is_container)
                 {
@@ -176,24 +223,13 @@ namespace uva
                 bool passed = is_match ? expected.m_expect_result : !expected.m_expect_result;
 
                 if(!passed) {
-                    if constexpr (is_container)
-                    {
-                        std::string expected_str = uva::string::join(*matcher.m_expected, ',');
-                        std::string got_str = uva::string::join(*expected.m_expected, ',');
+                    std::string expected_str = format_t(*matcher.m_expected);
+                    std::string got_str = format_t(*expected.m_expected);
 
-                        if(expected.m_expect_result) {
-                            throw test_not_passed(std::format("Expected {{ {} }}\ngot      {{ {} }}", expected_str, got_str));
-                        } else {
-                            throw test_not_passed(std::format("Expected NOT {{ {} }}\ngot          {{ {} }}", expected_str, got_str));
-                        }
-
-                    } else 
-                    {
-                        if(expected.m_expect_result) {
-                            throw test_not_passed(std::format("Expected {}\ngot      {}", *matcher.m_expected, *expected.m_expected));
-                        } else {
-                            throw test_not_passed(std::format("Expected NOT {}\ngot          {}", *matcher.m_expected, *expected.m_expected));
-                        }
+                    if(expected.m_expect_result) {
+                        throw test_not_passed(std::format("Expected {}\ngot      {}", expected_str, got_str));
+                    } else {
+                        throw test_not_passed(std::format("Expected NOT {}\ngot          {}", expected_str, got_str));
                     }
                 }
 
