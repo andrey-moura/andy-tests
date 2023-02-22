@@ -185,11 +185,11 @@ void uva::cspec::test_group::do_test() const
                 __test->m_body();
             } catch(uva::cspec::test_not_passed& e)
             {
-                error_message = std::format("{}\nTest resulted in following error:\n{}", __test->m_name, e.what());
+                error_message = std::format("{}\nTest resulted in following error:\n{}\n", __test->m_name, e.what());
             }
             catch(std::exception& e)
             {
-                error_message = std::format("{}\nTest thrown following exception:\n{}", __test->m_name, e.what());
+                error_message = std::format("{}\nTest thrown following exception:\n{}\n", __test->m_name, e.what());
             }
 
             std::cout.clear();
