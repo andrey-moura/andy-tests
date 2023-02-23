@@ -109,7 +109,7 @@ void uva::cspec::test::do_test() const
 {
    m_body();
 }
-
+ 
 //TEST GROUP BEGIN
 
 uva::cspec::test_group::test_group(const std::string& __name, const std::vector<uva::cspec::test_base*>& _tests, bool _is_root) 
