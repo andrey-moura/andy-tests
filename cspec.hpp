@@ -419,6 +419,7 @@ namespace uva
         {
         public:
             std::vector<const test_base*> tests;
+            std::string name;
             virtual void do_test() const = 0;
             bool is_group = false;
             bool is_root = false;
@@ -428,11 +429,10 @@ namespace uva
         class test : public test_base
         {
         public:
-            std::string m_name;
             std::function<void()> m_body;
         public:
             test() = default;
-            test(const std::string& name, const std::function<void()> body);
+            test(const std::string& __name, const std::function<void()> body);
             virtual void do_test() const override;
         };
         struct before_each : public test_base
@@ -462,11 +462,10 @@ namespace uva
         class test_group : public test_base
         {
         public:
-            std::string m_name;
             const before_all* m_beforeAll = nullptr;
             const before_each* m_beforeEach = nullptr;
         public:
-            test_group(const std::string& name, const std::vector<test_base*>& tests, bool is_root = false);
+            test_group(const std::string& __name, const std::vector<test_base*>& tests, bool is_root = false);
             virtual void do_test() const override;
         };
     };

@@ -51,9 +51,15 @@ std::vector<uva::cspec::test_group*>& uva::cspec::core::get_groups()
     return s_tests_groups;
 }
 
+uva::cspec::test_base::test_base(const std::string& __name)
+    : name(__name)
+{
+
+}
+
 void uva::cspec::core::run_tests()
 {
-    std::vector<uva::cspec::test_group*> groups = uva::cspec::core::get_groups();
+    std::vector<uva::cspec::test_group*>& groups = uva::cspec::core::get_groups();
 
     examples = 0;
     failures = 0;
@@ -93,8 +99,8 @@ void uva::cspec::core::run_tests()
 
 //TEST END
 
-uva::cspec::test::test(const std::string& name, const std::function<void()> body)
-    : m_name(name), m_body(body)
+uva::cspec::test::test(const std::string& __name, const std::function<void()> body)
+    : test_base(__name), m_body(body)
 {
     tests.push_back(this);
 }
@@ -104,10 +110,94 @@ void uva::cspec::test::do_test() const
    m_body();
 }
 
+bool uva::cspec::test_base::recursively_has_test(std::string& name, const uva::cspec::test_base* child) const
+{
+    for(const uva::cspec::test_base* test : tests) {
+        if(child == test) {
+            return true;
+        }
+
+        if(test->is_group && test->recursively_has_test(name, child)) {
+            name += test->name;
+            test->recursively_has_test(name, child);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void uva::cspec::test_base::recursively_traverse_name(std::string& name, const uva::cspec::test_base *child) const
+{
+    // const uva::cspec::test_base* test = this;
+    // while(test->recursively_has_test(child))
+    // {
+    //     if(test == child) return;
+    //     name += test->name;
+    //     name.push_back(' ');
+
+    //     //now the job is traverse to find the next node containing self
+    //     for(const uva::cspec::test_base* __test : tests) {
+    //         if(__test->recursively_has_test(this)) {
+    //             recursively_traverse_name(name, child);
+    //         }
+    //     }
+
+    //     break;
+    // }
+}
+
+const uva::cspec::test_base *uva::cspec::test_base::recursively_find_test_parent(const test_base *test, const test_base *last) const
+{
+    if(is_group) {
+        for(size_t i = 0; i < tests.size(); ++i) {
+            const uva::cspec::test_base * found = tests[i]->recursively_find_test_parent(test, last);
+            if(found) {
+                if(last == this) {
+                    return found;
+                }
+                return this;
+            }
+        }
+    }
+    else {
+        if(this == test) {
+            return this;
+        }
+    }
+
+    return nullptr;
+}
+
+std::string uva::cspec::test::full_name()
+{
+   // uva::cspec::test_group* parent = nullptr;
+    std::vector<uva::cspec::test_group*>& groups = uva::cspec::core::get_groups();
+
+    std::string full_name;
+
+    for(const uva::cspec::test_group* group : groups) {
+        //if(group->recursively_has_test(full_name, this)) {
+           // while(uva::cspec::test_base* parent = (group->recursively_find_test(this))) {
+                //full_name += parent->name;
+           // }
+            //found the root test group with self
+            //group->recursively_traverse_name(full_name, this);
+            //break;
+//}
+            const uva::cspec::test_base* parent = nullptr;
+            while(parent = group->recursively_find_test_parent(this, parent)) {
+                full_name += parent->name;
+            }
+    }
+
+    return full_name;
+}
+
 //TEST GROUP BEGIN
 
-uva::cspec::test_group::test_group(const std::string& name, const std::vector<uva::cspec::test_base*>& _tests, bool _is_root) 
-    : m_name(name)
+uva::cspec::test_group::test_group(const std::string& __name, const std::vector<uva::cspec::test_base*>& _tests, bool _is_root) 
+    : test_base(__name)
 {
     if(_is_root) {
         std::vector<uva::cspec::test_group*>& groups = uva::cspec::core::get_groups();
@@ -143,6 +233,16 @@ void print_identation(size_t add = 0)
     std::cout << identation;
 }
 
+std::vector<std::string> hierarchy;
+
+std::string get_test_name_on_hierarchy(uva::cspec::test_base* test)
+{
+    std::string hierarchy_str = uva::string::join(hierarchy, ' ');
+    hierarchy_str.push_back(' ');
+    hierarchy_str += test->name;
+    return hierarchy_str;
+}
+
 void uva::cspec::test_group::do_test() const
 {
     if(m_beforeAll) {
@@ -155,7 +255,7 @@ void uva::cspec::test_group::do_test() const
 
     if(is_group) {
         print_identation();
-        std::cout << m_name << std::endl;
+        std::cout << name << std::endl;
     }
 
     for(const uva::cspec::test_base* test : tests)
@@ -169,7 +269,10 @@ void uva::cspec::test_group::do_test() const
         if(test->is_group) {
             //recurse
             ++identation_level;
+
+            hierarchy.push_back(test->name);
             test->do_test();
+            hierarchy.pop_back();
         } else {
             examples++;
             //execute test
@@ -185,11 +288,11 @@ void uva::cspec::test_group::do_test() const
                 __test->m_body();
             } catch(uva::cspec::test_not_passed& e)
             {
-                error_message = std::format("{}\nTest resulted in following error:\n{}\n", __test->m_name, e.what());
+                error_message = std::format("{}\nTest resulted in following error:\n{}\n", get_test_name_on_hierarchy(__test), e.what());
             }
             catch(std::exception& e)
             {
-                error_message = std::format("{}\nTest thrown following exception:\n{}\n", __test->m_name, e.what());
+                error_message = std::format("{}\nTest thrown following exception:\n{}\n", get_test_name_on_hierarchy(__test), e.what());
             }
 
             std::cout.clear();
@@ -201,9 +304,9 @@ void uva::cspec::test_group::do_test() const
             if(error_message.size()) {
                 failures++;
                 failed_messages.push_back(error_message);
-                log_error(__test->m_name);
+                log_error(__test->name);
             } else {
-                log_success(__test->m_name);
+                log_success(__test->name);
             }
         }
     }
