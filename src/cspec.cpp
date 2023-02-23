@@ -51,9 +51,15 @@ std::vector<uva::cspec::test_group*>& uva::cspec::core::get_groups()
     return s_tests_groups;
 }
 
+uva::cspec::test_base::test_base(const std::string& __name)
+    : name(__name)
+{
+
+}
+
 void uva::cspec::core::run_tests()
 {
-    std::vector<uva::cspec::test_group*> groups = uva::cspec::core::get_groups();
+    std::vector<uva::cspec::test_group*>& groups = uva::cspec::core::get_groups();
 
     examples = 0;
     failures = 0;
@@ -93,8 +99,8 @@ void uva::cspec::core::run_tests()
 
 //TEST END
 
-uva::cspec::test::test(const std::string& name, const std::function<void()> body)
-    : m_name(name), m_body(body)
+uva::cspec::test::test(const std::string& __name, const std::function<void()> body)
+    : test_base(__name), m_body(body)
 {
     tests.push_back(this);
 }
@@ -106,8 +112,8 @@ void uva::cspec::test::do_test() const
 
 //TEST GROUP BEGIN
 
-uva::cspec::test_group::test_group(const std::string& name, const std::vector<uva::cspec::test_base*>& _tests, bool _is_root) 
-    : m_name(name)
+uva::cspec::test_group::test_group(const std::string& __name, const std::vector<uva::cspec::test_base*>& _tests, bool _is_root) 
+    : test_base(__name)
 {
     if(_is_root) {
         std::vector<uva::cspec::test_group*>& groups = uva::cspec::core::get_groups();
@@ -143,6 +149,16 @@ void print_identation(size_t add = 0)
     std::cout << identation;
 }
 
+std::vector<std::string> hierarchy;
+
+std::string get_test_name_on_hierarchy(uva::cspec::test_base* test)
+{
+    std::string hierarchy_str = uva::string::join(hierarchy, ' ');
+    hierarchy_str.push_back(' ');
+    hierarchy_str += test->name;
+    return hierarchy_str;
+}
+
 void uva::cspec::test_group::do_test() const
 {
     if(m_beforeAll) {
@@ -155,7 +171,7 @@ void uva::cspec::test_group::do_test() const
 
     if(is_group) {
         print_identation();
-        std::cout << m_name << std::endl;
+        std::cout << name << std::endl;
     }
 
     for(const uva::cspec::test_base* test : tests)
@@ -169,7 +185,10 @@ void uva::cspec::test_group::do_test() const
         if(test->is_group) {
             //recurse
             ++identation_level;
+
+            hierarchy.push_back(test->name);
             test->do_test();
+            hierarchy.pop_back();
         } else {
             examples++;
             //execute test
@@ -185,11 +204,11 @@ void uva::cspec::test_group::do_test() const
                 __test->m_body();
             } catch(uva::cspec::test_not_passed& e)
             {
-                error_message = std::format("{}\nTest resulted in following error:\n{}\n", __test->m_name, e.what());
+                error_message = std::format("{}\nTest resulted in following error:\n{}\n", get_test_name_on_hierarchy(__test), e.what());
             }
             catch(std::exception& e)
             {
-                error_message = std::format("{}\nTest thrown following exception:\n{}\n", __test->m_name, e.what());
+                error_message = std::format("{}\nTest thrown following exception:\n{}\n", get_test_name_on_hierarchy(__test), e.what());
             }
 
             std::cout.clear();
@@ -201,9 +220,9 @@ void uva::cspec::test_group::do_test() const
             if(error_message.size()) {
                 failures++;
                 failed_messages.push_back(error_message);
-                log_error(__test->m_name);
+                log_error(__test->name);
             } else {
-                log_success(__test->m_name);
+                log_success(__test->name);
             }
         }
     }
