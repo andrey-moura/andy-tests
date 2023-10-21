@@ -153,8 +153,8 @@ namespace uva
             }
             static std::string format_t(const uva::core::var& v)
             {
-                if(v.type == var::var_type::string) {
-                    return std::format("\"{}\"", v.as<var::var_type::string>());
+                if(v.is_a<var::string>()) {
+                    return std::format("\"{}\"", v.as<var::string>());
                 } else {
                     return std::format("{}", v.to_s());
                 }

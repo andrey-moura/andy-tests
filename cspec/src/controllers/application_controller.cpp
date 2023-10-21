@@ -201,19 +201,19 @@ void application_controller::run()
     {
         var configuration = configurations[i];
 
-        if(configuration.type == var::var_type::map) {
+        if(configuration.is_a<var::map>()) {
             if(configuration_filter.size() && configuration["name"] != configuration_filter) {
                 continue;
             }
             var targets = configuration["targets"];
 
-            if(targets.type == var::var_type::array) {
+            if(targets.is_a<var::array>()) {
                 for(size_t target_i = 0; target_i < targets.size(); ++target_i) {
                     var target = targets[target_i];
 
                     var name = target["name"];
 
-                    if(name.type == var::var_type::string) {
+                    if(name.is_a<var::string>()) {
                         if(filter.size() && name != filter) {
                             continue;
                         }
@@ -221,7 +221,7 @@ void application_controller::run()
                             continue;
                         }
 
-                        std::string __name = name.as<var::var_type::string>();
+                        std::string __name = name.as<var::string>();
 
                         if(std::find(targets_names.begin(), targets_names.end(), __name) == targets_names.end()) {
                             targets_names.push_back(std::move(__name));
