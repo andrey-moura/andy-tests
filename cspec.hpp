@@ -7,7 +7,11 @@
 #include <sstream>
 #include <typeinfo>
 
+#include <core.hpp>
 #include <string.hpp>
+#include <binary.hpp>
+
+#undef min
 
 #define CONCATENATE_DIRECT(s1, s2) s1##s2
 #define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
@@ -28,6 +32,7 @@
 
 #define cspec_describe(group_title, examples) uva::cspec::test_group* CONCATENATE(test_line_, __LINE__) =  new uva::cspec::test_group(group_title, { examples }, true)
 #define context(group_title, examples) new uva::cspec::test_group(group_title, { examples }),
+#define describe(group_title, examples) new uva::cspec::test_group(group_title, { examples }),
 #define it(test_title, test_body) new uva::cspec::test(test_title, test_body),
 
 #ifdef UVA_DATABASE_AVAILABLE
@@ -96,6 +101,17 @@ namespace uva
             }
             std::vector<std::string> logs;
         };
+        template<typename compare_type>
+        class point_to_mem_block_equal_of
+        {
+            public:
+            point_to_mem_block_equal_of(const compare_type& __compare)
+                : compare(__compare)
+            {
+
+            }
+            compare_type compare;
+        };
         template<typename T>
         class expect
         {
@@ -121,6 +137,50 @@ namespace uva
                 this_non_const->m_expect_result = false;
                 return *this;
             }
+            template<typename T>
+            static std::string format_t(const std::basic_string<T>& str)
+            {
+                return std::format("\"{}\"", str);
+            }
+            template<typename T>
+            static std::string format_t(const T* t)
+            {
+                return std::format("({}*){}", typeid(T).name(), (void*)t);
+            }
+            static std::string format_t(nullptr_t)
+            {
+                return "nullptr";
+            }
+            static std::string format_t(const uva::core::var& v)
+            {
+                if(v.is_a<var::string>()) {
+                    return std::format("\"{}\"", v.as<var::string>());
+                } else {
+                    return std::format("{}", v.to_s());
+                }
+            }
+            template<typename T>
+            static std::string format_t(const std::vector<T>& array)
+            {
+                std::string s = "{ ";
+
+                for(size_t i = 0; i < array.size(); ++i)  {
+                    s += std::format("{}", array[i]);
+
+                    if(i < array.size()-1) {
+                        s += ", ";
+                    }
+                }
+
+                s = " }";
+
+                return s;
+            }
+            template<typename T>
+            static std::string format_t(const T& t)
+            {
+                return std::format("{}", t);
+            }
             template<typename OtherT>
             friend const expect<T>& operator<<(const expect<T>& expected, const eq<OtherT>& matcher)
             {
@@ -130,10 +190,12 @@ namespace uva
                 bool is_match;
 
                 const constexpr bool expect_is_container = uva::string::is_container<T>::value;
-                const constexpr bool match_is_container = uva::string::is_container<OtherT>::value;
-                const constexpr bool expect_is_string = std::is_same<std::string, T>::value;
-                const constexpr bool match_is_string = std::is_same<std::string, OtherT>::value;
-                const constexpr bool is_container = expect_is_container && match_is_container && !expect_is_string && !match_is_string;
+                const constexpr bool match_is_container  = uva::string::is_container<OtherT>::value;
+                const constexpr bool expect_is_string    = std::is_same<std::string, T>::value;
+                const constexpr bool match_is_string     = std::is_same<std::string, OtherT>::value;
+                const constexpr bool is_container        = expect_is_container && match_is_container && !expect_is_string && !match_is_string;
+                const constexpr bool expect_is_pointer   = uva::string::is_pointer<T>::value;
+                const constexpr bool compare_is_pointer  = uva::string::is_pointer<OtherT>::value;
                 
                 if constexpr (is_container)
                 {
@@ -161,16 +223,13 @@ namespace uva
                 bool passed = is_match ? expected.m_expect_result : !expected.m_expect_result;
 
                 if(!passed) {
-                    if constexpr (is_container)
-                    {
-                        std::string expected_str = uva::string::join(*matcher.m_expected, ',');
-                        std::string got_str = uva::string::join(*expected.m_expected, ',');
+                    std::string expected_str = format_t(*matcher.m_expected);
+                    std::string got_str = format_t(*expected.m_expected);
 
-                        throw test_not_passed(std::format("Expected {{ {} }}\ngot      {{ {} }}", expected_str, got_str));
-
-                    } else 
-                    {
-                       throw test_not_passed(std::format("Expected {}\ngot      {}", *matcher.m_expected, *expected.m_expected));
+                    if(expected.m_expect_result) {
+                        throw test_not_passed(std::format("Expected {}\ngot      {}", expected_str, got_str));
+                    } else {
+                        throw test_not_passed(std::format("Expected NOT {}\ngot          {}", expected_str, got_str));
                     }
                 }
 
@@ -293,6 +352,60 @@ namespace uva
 
                 return expected;
             }
+            template<typename compare_type>
+            friend const expect<T>& operator<<(const expect<T>& expected, const point_to_mem_block_equal_of<compare_type>& matcher)
+            {
+                const compare_type* p_compare = &matcher.compare;
+                const size_t amount_to_cmp = sizeof(compare_type);
+                bool is_match = memcmp(*expected.m_expected, p_compare, amount_to_cmp) == 0;
+
+                bool passed = is_match ? expected.m_expect_result : !expected.m_expect_result;
+
+                if(!passed) {
+                    std::string error_msg;
+                    if( expected.m_expect_result ) {
+                        error_msg = std::format("Expected memory block at {} to be equal to memory block at {}, but it was not.\nThey were:\n", (void*)expected.m_expected, (void*)p_compare);
+                    } else {
+                        error_msg = std::format("Expected memory block at {} to NOT be equal to memory block at {}, but it was equal.\nThey were:\n", (void*)expected.m_expected, (void*)p_compare);
+                    }
+                    const size_t line_len = 8;
+                    const size_t line_count = 4;
+                    size_t bytes_to_display = std::min(amount_to_cmp, line_len*line_count);
+                    size_t bytes_displayed = 0;
+
+                    for(size_t line = 0; line < line_count; ++line) {
+                        size_t line_start = bytes_displayed;
+                        for(size_t current_byte = 0; current_byte < line_len; ++ current_byte) 
+                        {
+                            if(bytes_displayed+current_byte >= bytes_to_display) {
+                                break;
+                            }
+
+                            error_msg += uva::binary::to_hex_string(((uint8_t*)expected.m_expected)+line_start+current_byte, 1);
+                            error_msg += " ";
+                        }
+                        error_msg += "    ";
+                        for(size_t current_byte = 0; current_byte < line_len; ++ current_byte) 
+                        {
+                            if(bytes_displayed+current_byte >= bytes_to_display) {
+                                break;
+                            }
+
+                            error_msg += uva::binary::to_hex_string(((uint8_t*)p_compare)+line_start+current_byte, 1);
+                            error_msg += " ";
+                        }
+                        bytes_displayed+=line_len;
+                        if(bytes_displayed >= bytes_to_display) {
+                            break;
+                        }
+                        error_msg += "\n";
+                    }
+
+                    throw test_not_passed(error_msg);
+                }
+
+                return expected;
+            }
         };
         class core
         {
@@ -305,8 +418,11 @@ namespace uva
         class test_base
         {
         public:
+            test_base() = default;
+            test_base(const std::string& __name);
             std::vector<const test_base*> tests;
-            virtual void do_test(std::function<void(const test*)> _body) const = 0;
+            std::string name;
+            virtual void do_test() const = 0;
             bool is_group = false;
             bool is_root = false;
             bool is_before_all = false;
@@ -315,12 +431,11 @@ namespace uva
         class test : public test_base
         {
         public:
-            std::string m_name;
             std::function<void()> m_body;
         public:
             test() = default;
-            test(const std::string& name, const std::function<void()> body);
-            virtual void do_test(std::function<void(const test*)> _body) const override;
+            test(const std::string& __name, const std::function<void()> body);
+            virtual void do_test() const override;
         };
         struct before_each : public test_base
         {
@@ -332,7 +447,7 @@ namespace uva
                 is_before_each = true;
             }
 
-            virtual void do_test(std::function<void(const test*)> _body) const override {};
+            virtual void do_test() const override {};
         };
         struct before_all : public test_base
         {
@@ -344,17 +459,16 @@ namespace uva
                 is_before_all = true;
             }
 
-            virtual void do_test(std::function<void(const test*)> _body) const override {};
+            virtual void do_test() const override {};
         };
         class test_group : public test_base
         {
         public:
-            std::string m_name;
             const before_all* m_beforeAll = nullptr;
             const before_each* m_beforeEach = nullptr;
         public:
-            test_group(const std::string& name, const std::vector<test_base*>& tests, bool is_root = false);
-            virtual void do_test(std::function<void(const test*)> _body) const override;
+            test_group(const std::string& __name, const std::vector<test_base*>& tests, bool is_root = false);
+            virtual void do_test() const override;
         };
     };
 };
