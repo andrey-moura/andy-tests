@@ -1,51 +1,44 @@
 #Require a minimum version
 cmake_minimum_required(VERSION 3.10)
 
-project(uva-cspec)
+project(uva-test)
 
-# Minimun C++ version
+# C++ version
 set(CMAKE_CXX_STANDARD 20)
 
-add_library(uva-cspec
-	${CMAKE_CURRENT_LIST_DIR}/src/cspec.cpp
-)
+add_library(uva-tests-main ${CMAKE_CURRENT_LIST_DIR}/src/test-main.cpp)
+target_link_libraries(uva-tests-main uva-console)
+add_executable(uva-test ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR})
+include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
-# cspec executable
-include("${CMAKE_CURRENT_LIST_DIR}/cspec/CMakeLists.txt")
+function(uva_tests_configure target)
+    message(STATUS "Configuring tests for ${target}")
 
-function(cspec_configure project source_dir libraries)
+    message(STATUS "Project source dir: ${CMAKE_CURRENT_LIST_DIR}")
+    
+    set(UVA_TESTS_DIR ${CMAKE_CURRENT_LIST_DIR}/uva-tests)
+    message(STATUS "Tests source dir: ${UVA_TESTS_DIR}")
 
-	set(target "${project}-spec")
-	message(STATUS "Initializing tests: ${target}")
+    set(UVA_TESTS_TARGET_DIR ${UVA_TESTS_DIR}/${target})
+    message(STATUS "Tests target dir: ${UVA_TESTS_TARGET_DIR}")
 
-	set(tests_folder "${source_dir}/cspec")
-	message(STATUS "Tests folder: ${tests_folder}")
+    file(GLOB_RECURSE UVA_TESTS_SOURCES ${UVA_TESTS_TARGET_DIR}/*spec.cpp)
 
-	file(GLOB_RECURSE test_files CONFIGURE_DEPENDS 
-		${tests_folder}/*_spec.cpp
-		${tests_folder}/*_spec.hpp
-		${tests_folder}/*_spec.c
-		${tests_folder}/*_spec.h
+    foreach(test_source ${UVA_TESTS_SOURCES})
+        get_filename_component(test_name ${test_source} NAME_WE)
+        message(STATUS "Adding test: ${test_name}")
+        
+        add_executable(${test_name} ${test_source})
+        target_link_libraries(${test_name} uva-tests-main)
 
-	)
+        # Check if the target is a library or an executable
+        get_target_property(target_type ${target} TYPE)
 
-	list (APPEND test_files "${tests_folder}/cspec.cpp")
+        if(${target_type} STREQUAL "STATIC_LIBRARY")
+            target_link_libraries(${test_name} ${target})
+        endif()
 
-	message(STATUS "Test files: ${test_files}")
-
-	#create tests for parent project
-	add_executable(${target} ${test_files})
-
-	#link this library with parent's tests project
-	target_link_libraries(${target} uva-cspec uva-console uva-faker uva-binary ${libraries})
-
-	get_target_property(OUT ${target} LINK_LIBRARIES)
-	message(STATUS "Libraries linked to tests: ${OUT}")
-
-	set(cspec_folder "${source_dir}/cspec")
-	set(cspec_temp_dir "${cspec_folder}/temp")
-
-	target_compile_definitions(${target} PUBLIC -DCSPEC_FOLDER="${cspec_folder}" -DCSPEC_TEMP_FOLDER="${cspec_temp_dir}")
+    endforeach()
+    
 endfunction()
