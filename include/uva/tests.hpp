@@ -35,9 +35,9 @@ namespace uva
         extern std::vector<test_result> result_list;
         extern bool has_the_first_specification;
 
+#ifdef USE_FMT_FORMT
         template <typename T, typename = void>
         struct is_formattable : std::false_type {};
-
         template <typename T>
         struct is_formattable<T, 
             std::enable_if_t< 
@@ -47,6 +47,10 @@ namespace uva
 
         template <typename T>
         static constexpr auto is_formattable_v = is_formattable<T>::value;
+#else
+        template <typename T>
+        static constexpr auto is_formattable_v = false;
+#endif
 
         template<typename T> struct is_shared_ptr : std::false_type {};
         template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
