@@ -4,9 +4,9 @@
 #include <functional>
 #include <memory>
 
-#include <console.hpp>
+#include <uva/console.hpp>
 
-namespace uva
+namespace andy
 {
     namespace tests
     {
@@ -76,8 +76,9 @@ namespace uva
             } else if constexpr ( std::is_same_v<T, std::string_view>) {
                 return std::string(value);
             }
-            // } else if constexpr ( std::is_same_v<T, std::string_view>) {
-            //     return std::string(value);
+            else if constexpr ( std::is_same_v<T, std::string>) {
+                return value;
+            }
             // } else if constexpr (std::is_arithmetic_v<T>) {
             //     return std::to_string(value);
             // }

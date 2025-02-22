@@ -13,14 +13,14 @@ void sleep(int multiplier = 1)
 int main(int argc, char* argv[])
 {
     if(argc < 1) {
-        std::cout << "Usage: uva-test file [options]" << std::endl;
+        std::cout << "Usage: andy-test file [options]" << std::endl;
         return 1;
     }
 
     std::filesystem::path cmake_lists = std::filesystem::absolute("CMakeLists.txt");
 
     if(!std::filesystem::exists(cmake_lists)) {
-        std::cout << "CMakeLists.txt not found. Make sure to call uva-test from the root of your project." << std::endl;
+        std::cout << "CMakeLists.txt not found. Make sure to call andy-test from the root of your project." << std::endl;
         return 1;
     }
 
@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     std::filesystem::path build_folder = std::filesystem::absolute("build");
 
     if(!std::filesystem::exists(build_folder)) {
-        std::cout << "Build folder not found. Make sure to call uva-test from where you ran cmake." << std::endl;
+        std::cout << "Build folder not found. Make sure to call andy-test from where you ran cmake." << std::endl;
     }
     
     bool should_keep = false;
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
         }
 
         std::cout << std::endl;
-        std::cout << "uva-tests will keep running until you press Ctrl + C." << std::endl;
+        std::cout << "andy-tests will keep running until you press Ctrl + C." << std::endl;
 
         while(1) {
             sleep();

@@ -1,13 +1,13 @@
-#include <uva/tests.hpp>
+#include <andy/tests.hpp>
 
-using namespace uva;
-using namespace uva::tests;
+using namespace andy;
+using namespace andy::tests;
 
 extern context_or_describe of;
 
-size_t uva::tests::current_describe_level = 0;
-std::vector<uva::tests::test_result> uva::tests::result_list;
-bool uva::tests::has_the_first_specification = false;
+size_t andy::tests::current_describe_level = 0;
+std::vector<andy::tests::test_result> andy::tests::result_list;
+bool andy::tests::has_the_first_specification = false;
 
 int main(int argc, char* argv[])
 {
