@@ -336,6 +336,8 @@ namespace andy
     }
 };
 
+using namespace andy::tests;
+
 #define given auto
 #define subject(x) auto subject = x
 #define its subject.
