@@ -27,12 +27,14 @@ namespace andy
         {
         public:
             bool passed = true;
+            std::string describes;
             std::string error_message;
             std::string description;
         };
 
         extern size_t current_describe_level;
         extern std::vector<test_result> result_list;
+        extern std::vector<std::string_view> current_describe;
         extern bool has_the_first_specification;
 
 #ifdef USE_FMT_FORMT
@@ -236,14 +238,12 @@ namespace andy
                 init(test_function);
             }
         public:
-
-        public:
             std::string m_description;
         protected:
             void init(std::function<void()> test_function)
             {
                 test_result result;
-                result.description = std::format("{}", m_description);
+                result.description = m_description;
                 
                 try {
                     test_function();
@@ -259,6 +259,14 @@ namespace andy
                 if(result.passed) {
                     uva::console::log_success("{}", m_description);
                 } else {
+                    for(const std::string_view& sv : andy::tests::current_describe)
+                    {
+                        if(result.describes.size()) {
+                            result.describes.push_back(' ');
+                        }
+                        result.describes += sv;
+                    }
+
                     uva::console::log_error("{}", m_description);
                 }
 
@@ -315,15 +323,18 @@ namespace andy
                 std::cout << std::endl;
 
                 if(!tests::has_the_first_specification) {
+                    andy::tests::current_describe.push_back(m_description);
                     tests::has_the_first_specification = true;
                     return;
                 }
 
                 tests::current_describe_level++;
+                andy::tests::current_describe.push_back(m_description);
 
                 m_test_function();
 
                 tests::current_describe_level--;
+                andy::tests::current_describe.pop_back();
             }
         public:
             std::string_view m_description;
@@ -332,7 +343,7 @@ namespace andy
         };
         using describe  = context_or_describe;
         using context   = context_or_describe;
-        using it = test;
+        using it        = test;
     }
 };
 

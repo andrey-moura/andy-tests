@@ -8,6 +8,7 @@ extern context_or_describe of;
 size_t andy::tests::current_describe_level = 0;
 std::vector<andy::tests::test_result> andy::tests::result_list;
 bool andy::tests::has_the_first_specification = false;
+std::vector<std::string_view> andy::tests::current_describe;
 
 int main(int argc, char* argv[])
 {
@@ -31,7 +32,7 @@ int main(int argc, char* argv[])
             ++failed;
             std::cout << std::endl;
 
-            uva::console::log_error("{}", result.description);
+            uva::console::log_error("{} {}", result.describes, result.description);
             uva::console::log_error("{}", result.error_message);
         }
     }
