@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <chrono>
 
 #include <uva/console.hpp>
 
@@ -27,6 +28,7 @@ namespace andy
         {
         public:
             bool passed = true;
+            int duration = 0;
             std::string describes;
             std::string error_message;
             std::string description;
@@ -244,6 +246,8 @@ namespace andy
             {
                 test_result result;
                 result.description = m_description;
+
+                auto start = std::chrono::high_resolution_clock::now();
                 
                 try {
                     test_function();
@@ -251,6 +255,10 @@ namespace andy
                     result.error_message = e.what();
                     result.passed = false;
                 }
+
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                result.duration = duration.count();
 
                 for(size_t i = 0; i < tests::current_describe_level; i++) {
                     std::cout << "  ";
