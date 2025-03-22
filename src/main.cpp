@@ -44,6 +44,8 @@ int main(int argc, char* argv[])
     file << "<testsuites>" << std::endl;
     file.close();
 
+    bool has_one_failed = false;
+
     for(auto& path : test_files) {
         std::string command = "cmake --build " + build_folder.string() + " --target " + path.stem().string() + " -- -j 4 > " + build_folder.string() + "/build.log 2>&1";
 
@@ -53,11 +55,13 @@ int main(int argc, char* argv[])
 
         std::cout << std::endl;
 
-        system((build_folder / path.stem()).string().c_str());
+        if(system((build_folder / path.stem()).string().c_str())) {
+            has_one_failed = true;
+        }
     }
 
     file.open("andy_tests.xml", std::ios::app);
     file << "</testsuites>" << std::endl;
 
-    return 0;
+    return (has_one_failed ? 1 : 0);
 }
