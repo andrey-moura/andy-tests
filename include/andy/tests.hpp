@@ -264,17 +264,17 @@ namespace andy
                     std::cout << "  ";
                 }
 
+                for(const std::string_view& sv : andy::tests::current_describe)
+                {
+                    if(result.describes.size()) {
+                        result.describes.push_back(' ');
+                    }
+                    result.describes += sv;
+                }
+
                 if(result.passed) {
                     uva::console::log_success("{}", m_description);
                 } else {
-                    for(const std::string_view& sv : andy::tests::current_describe)
-                    {
-                        if(result.describes.size()) {
-                            result.describes.push_back(' ');
-                        }
-                        result.describes += sv;
-                    }
-
                     uva::console::log_error("{}", m_description);
                 }
 
@@ -284,6 +284,7 @@ namespace andy
         class context_or_describe
         {
         public:
+            context_or_describe() = default;
             context_or_describe(describe_what what, std::string_view description, std::function<void()> test_function)
                 : m_what(what), m_description(description), m_test_function(test_function)
             {
@@ -352,6 +353,7 @@ namespace andy
         using describe  = context_or_describe;
         using context   = context_or_describe;
         using it        = test;
+        int run();
     }
 };
 
