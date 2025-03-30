@@ -40,6 +40,11 @@ int main(int argc, char* argv[])
                     command += build_folder.string();
                     command += " --target ";
                     command += path.stem().string();
+#ifdef _NDEBUG
+                    command += " --config Release";
+#else
+                    command += " --config Debug";
+#endif
 #ifdef __linux__
                     command += " -- -j 4";
 #endif
@@ -71,6 +76,9 @@ int main(int argc, char* argv[])
             std::string command;
             std::filesystem::path andy_executable_path = argv[0];
             andy_executable_path.replace_filename("andy");
+#ifdef _WIN32
+            andy_executable_path.replace_extension(".exe");
+#endif
             if(!std::filesystem::exists(andy_executable_path)) {
                 std::cout << "andy executable not found. Expected to be at " << andy_executable_path.string() << std::endl;
                 return 1;
@@ -82,7 +90,7 @@ int main(int argc, char* argv[])
             }
         }
         else {
-            if(system((build_folder / path.stem()).string().c_str())) {
+            if(system((build_folder / path.filename()).string().c_str())) {
             }
         }
     }
