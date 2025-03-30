@@ -56,8 +56,6 @@ int main(int argc, char* argv[])
     file << "<testsuites>" << std::endl;
     file.close();
 
-    bool has_one_failed = false;
-
     for(auto& path : test_files) {
         if(path.extension() == ".andy") {
             std::string command;
@@ -71,18 +69,61 @@ int main(int argc, char* argv[])
             command.append(" ");
             command.append(path.string());
             if(system(command.c_str())) {
-                has_one_failed = true;
             }
         }
         else {
             if(system((build_folder / path.stem()).string().c_str())) {
-                has_one_failed = true;
             }
         }
     }
 
     file.open("andy_tests.xml", std::ios::app);
     file << "</testsuites>" << std::endl;
+    file.close();
 
-    return (has_one_failed ? 1 : 0);
+    int tests = 0;
+    int failed = 0;
+
+    // Read the XML file to extract the test results
+    std::ifstream xml_file("andy_tests.xml");
+    std::string line;
+    while (std::getline(xml_file, line)) {
+        std::string_view line_view = line;
+        while(line_view.size() && isspace(line_view.front())) {
+            line_view.remove_prefix(1);
+        }
+        if(line_view.starts_with("<testsuite")) {
+            line_view.remove_prefix(10);
+            while(line_view.size()) {
+                if(line_view.starts_with("tests=\"")) {
+                    line_view.remove_prefix(7);
+                    std::string_view tests_str = line_view.substr(0, line_view.find('"'));
+                    tests += std::stoi(std::string(tests_str));
+                }
+                if(line_view.starts_with("failures=\"")) {
+                    line_view.remove_prefix(10);
+                    std::string_view failures_str = line_view.substr(0, line_view.find('"'));
+                    failed += std::stoi(std::string(failures_str));
+                }
+                line_view.remove_prefix(1);
+            }
+        }
+    }
+
+    xml_file.close();
+
+    if(failed) {
+        // red
+        std::cout << "\033[31m";
+    } else {
+        // green
+        std::cout << "\033[32m";
+    }
+    std::cout << tests << " examples. " << (tests - failed) << " passed, " << failed << " failures" << std::endl;
+    if(failed) {
+        // reset color
+        std::cout << "\033[0m";
+    }
+
+    return failed ? 1 : 0;
 }
