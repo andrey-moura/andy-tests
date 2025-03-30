@@ -49,7 +49,8 @@ int main(int argc, char* argv[])
 
                     if(system(command.c_str())) {
                         std::cout << std::endl;
-                        std::cerr << "Failed to build " << path.stem().string() << std::endl;
+                        std::cerr << "Failed to build " << path.stem().string() << ". " << std::endl;
+                        std::cerr << "Command run: " << command << std::endl;
                         return 1;
                     }
         
