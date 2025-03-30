@@ -35,7 +35,7 @@ function(andy_tests_configure target)
         # Check if the target is a library or an executable
         get_target_property(target_type ${target} TYPE)
 
-        if(${target_type} STREQUAL "STATIC_LIBRARY")
+        if(${target_type} STREQUAL "STATIC_LIBRARY" OR ${target_type} STREQUAL "OBJECT_LIBRARY")
             target_link_libraries(${test_name} ${target})
         endif()
 
