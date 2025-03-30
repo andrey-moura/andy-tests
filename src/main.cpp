@@ -90,11 +90,17 @@ int main(int argc, char* argv[])
             }
         }
         else {
-            std::string command = (build_folder / path.stem()).string();
+            std::filesystem::path spec_exec_path = build_folder;
+#ifdef NDEBUG
+            spec_exec_path /= "Release/";
+#else
+            spec_exec_path /= "Debug/";
+#endif
+            spec_exec_path /= path.stem();
 #ifdef _WIN32
             command += ".exe";
 #endif
-            if(system(command.c_str())) {
+            if(system(spec_exec_path.string().c_str())) {
             }
         }
     }
