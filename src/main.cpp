@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 #endif
             spec_exec_path /= path.stem();
 #ifdef _WIN32
-            command += ".exe";
+            exec_path.replace_extension(".exe");
 #endif
             if(system(spec_exec_path.string().c_str())) {
             }
