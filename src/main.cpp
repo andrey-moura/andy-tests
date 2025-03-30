@@ -40,7 +40,10 @@ int main(int argc, char* argv[])
                     command += build_folder.string();
                     command += " --target ";
                     command += path.stem().string();
-                    command += " -- -j 4 > ";
+#ifdef __linux__
+                    command += " -- -j 4";
+#endif
+                    command += " > ";
                     command += build_folder.string();
                     command += "/build.log";
 
