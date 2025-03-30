@@ -3,6 +3,7 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <chrono>
 
 #include <uva/console.hpp>
 
@@ -27,6 +28,7 @@ namespace andy
         {
         public:
             bool passed = true;
+            int duration = 0;
             std::string describes;
             std::string error_message;
             std::string description;
@@ -244,6 +246,8 @@ namespace andy
             {
                 test_result result;
                 result.description = m_description;
+
+                auto start = std::chrono::high_resolution_clock::now();
                 
                 try {
                     test_function();
@@ -252,21 +256,25 @@ namespace andy
                     result.passed = false;
                 }
 
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                result.duration = duration.count();
+
                 for(size_t i = 0; i < tests::current_describe_level; i++) {
                     std::cout << "  ";
+                }
+
+                for(const std::string_view& sv : andy::tests::current_describe)
+                {
+                    if(result.describes.size()) {
+                        result.describes.push_back(' ');
+                    }
+                    result.describes += sv;
                 }
 
                 if(result.passed) {
                     uva::console::log_success("{}", m_description);
                 } else {
-                    for(const std::string_view& sv : andy::tests::current_describe)
-                    {
-                        if(result.describes.size()) {
-                            result.describes.push_back(' ');
-                        }
-                        result.describes += sv;
-                    }
-
                     uva::console::log_error("{}", m_description);
                 }
 
@@ -276,6 +284,7 @@ namespace andy
         class context_or_describe
         {
         public:
+            context_or_describe() = default;
             context_or_describe(describe_what what, std::string_view description, std::function<void()> test_function)
                 : m_what(what), m_description(description), m_test_function(test_function)
             {
@@ -344,6 +353,7 @@ namespace andy
         using describe  = context_or_describe;
         using context   = context_or_describe;
         using it        = test;
+        int run();
     }
 };
 

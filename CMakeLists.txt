@@ -6,9 +6,17 @@ project(andy-test)
 # C++ version
 set(CMAKE_CXX_STANDARD 20)
 
-add_library(andy-tests-main ${CMAKE_CURRENT_LIST_DIR}/src/test-main.cpp)
-target_link_libraries(andy-tests-main uva-console)
-add_executable(andy-test ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp)
+add_library(andy-tests OBJECT
+    ${CMAKE_CURRENT_LIST_DIR}/src/andy-tests.cpp
+)
+
+add_library(andy-tests-main OBJECT
+    ${CMAKE_CURRENT_LIST_DIR}/src/test-main.cpp
+)
+
+add_executable(andy-test
+    ${CMAKE_CURRENT_LIST_DIR}/src/main.cpp
+)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
@@ -29,8 +37,13 @@ function(andy_tests_configure target)
         get_filename_component(test_name ${test_source} NAME_WE)
         message(STATUS "Adding test: ${test_name}")
         
-        add_executable(${test_name} ${test_source})
-        target_link_libraries(${test_name} andy-tests-main)
+        add_executable(${test_name}
+            ${test_source}
+            $<TARGET_OBJECTS:andy-tests-main>
+            $<TARGET_OBJECTS:andy-tests>
+        )
+
+        target_link_libraries(${test_name} uva-console)
 
         # Check if the target is a library or an executable
         get_target_property(target_type ${target} TYPE)
