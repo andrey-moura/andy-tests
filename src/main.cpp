@@ -40,9 +40,6 @@ int main(int argc, char* argv[])
                     command += build_folder.string();
                     command += " --target ";
                     command += path.stem().string();
-#ifdef _WIN32
-                    command += ".exe";
-#endif
                     command += " -- -j 4 > ";
                     command += build_folder.string();
                     command += "/build.log";
