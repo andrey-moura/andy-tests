@@ -36,7 +36,16 @@ int main(int argc, char* argv[])
                         }
                     }
 
-                    std::string command = "cmake --build " + build_folder.string() + " --target " + path.stem().string() + " -- -j 4 > " + build_folder.string() + "/build.log";
+                    std::string command = "cmake --build ";
+                    command += build_folder.string();
+                    command += " --target ";
+                    command += path.stem().string();
+#ifdef _WIN32
+                    command += ".exe";
+#endif
+                    command += " -- -j 4 > ";
+                    command += build_folder.string();
+                    command += "/build.log";
 
                     if(system(command.c_str())) {
                         std::cout << std::endl;
