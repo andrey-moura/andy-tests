@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
             }
         }
         else {
-            std::string command = build_folder / path.stem();
+            std::string command = (build_folder / path.stem()).string();
 #ifdef _WIN32
             command += ".exe";
 #endif
