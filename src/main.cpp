@@ -90,7 +90,11 @@ int main(int argc, char* argv[])
             }
         }
         else {
-            if(system((build_folder / path.filename()).string().c_str())) {
+            std::string command = build_folder / path.stem();
+#ifdef _WIN32
+            command += ".exe";
+#endif
+            if(system(command.c_str())) {
             }
         }
     }
