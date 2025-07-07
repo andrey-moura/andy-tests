@@ -200,6 +200,22 @@ namespace andy
         public:
             const T& actual;
         };
+        class pending
+        {
+        public:
+            pending(std::string_view description, std::function<void()> test_function)
+            {
+                for(size_t i = 0; i < tests::current_describe_level; i++) {
+                    std::cout << "  ";
+                }
+
+                uva::console::log_warning(description);
+                test_result result;
+                result.description = std::string(description);
+                result.passed = true;
+                andy::tests::result_list.push_back(result);
+            }
+        };
         class test
         {
         public:
