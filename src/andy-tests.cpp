@@ -39,7 +39,7 @@ int andy::tests::run()
     try {
         of.m_test_function();
     } catch(const std::exception& e) {
-        uva::console::log_error("Exception outside examples: {}", e.what());
+        andy::console::log_error("Exception outside examples: {}", e.what());
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -73,8 +73,8 @@ int andy::tests::run()
             write_safe_str(file, result.error_message);
             file << "\" />" << std::endl;
 
-            uva::console::log_error("{} {}", result.describes, result.description);
-            uva::console::log_error("{}", result.error_message);
+            andy::console::log_error("{} {}", result.describes, result.description);
+            andy::console::log_error("{}", result.error_message);
         }
         file << "\t\t</testcase>" << std::endl;
     }
@@ -83,7 +83,7 @@ int andy::tests::run()
 
     file << "\t</testsuite>" << std::endl;
 
-    //uva::console::log("{} examples. {} passed, {} failures", passed + failed, passed, failed);
+    //andy::console::log("{} examples. {} passed, {} failures", passed + failed, passed, failed);
 
     return failed;
 }

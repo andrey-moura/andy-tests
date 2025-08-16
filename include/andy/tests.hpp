@@ -5,7 +5,7 @@
 #include <memory>
 #include <chrono>
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 namespace andy
 {
@@ -209,7 +209,7 @@ namespace andy
                     std::cout << "  ";
                 }
 
-                uva::console::log_warning(description);
+                andy::console::log_warning(description);
                 test_result result;
                 result.description = std::string(description);
                 result.passed = true;
@@ -289,9 +289,9 @@ namespace andy
                 }
 
                 if(result.passed) {
-                    uva::console::log_success("{}", m_description);
+                    andy::console::log_success("{}", m_description);
                 } else {
-                    uva::console::log_error("{}", m_description);
+                    andy::console::log_error("{}", m_description);
                 }
 
                 tests::result_list.push_back(result);

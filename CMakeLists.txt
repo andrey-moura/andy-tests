@@ -43,7 +43,7 @@ function(andy_tests_configure target)
             $<TARGET_OBJECTS:andy-tests>
         )
 
-        target_link_libraries(${test_name} uva-console)
+        target_link_libraries(${test_name} andy-console)
 
         # Check if the target is a library or an executable
         get_target_property(target_type ${target} TYPE)
