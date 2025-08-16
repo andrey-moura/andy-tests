@@ -5,11 +5,9 @@
 using namespace andy;
 using namespace andy::tests;
 
-extern context_or_describe of;
-
 size_t andy::tests::current_describe_level = 0;
+context_or_describe* andy::tests::first_specification = nullptr;
 std::vector<andy::tests::test_result> andy::tests::result_list;
-bool andy::tests::has_the_first_specification = false;
 std::vector<std::string_view> andy::tests::current_describe;
 
 void write_safe_str(std::ostream& out, std::string_view str)
@@ -36,19 +34,13 @@ int andy::tests::run()
     auto start = std::chrono::high_resolution_clock::now();
     tests::current_describe_level++;
 
-    try {
-        of.m_test_function();
-    } catch(const std::exception& e) {
-        andy::console::log_error("Exception outside examples: {}", e.what());
-    }
-
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
     // append to file
     std::ofstream file("andy_tests.xml", std::ios::app);
     file << "\t<testsuite name=\"";
-    write_safe_str(file, of.m_description);
+    write_safe_str(file, first_specification ? first_specification->m_description : "andy tests");
     file << "\" tests=\"" << tests::result_list.size() << "\" failures=\"0\" time=\"" << duration.count() / 1000.0 << "\">" << std::endl;
 
     std::cout << std::endl;

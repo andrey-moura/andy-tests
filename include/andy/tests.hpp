@@ -11,6 +11,8 @@ namespace andy
 {
     namespace tests
     {
+        int run();
+        class context_or_describe;
         enum describe_what
         {
             no_describe,
@@ -37,7 +39,7 @@ namespace andy
         extern size_t current_describe_level;
         extern std::vector<test_result> result_list;
         extern std::vector<std::string_view> current_describe;
-        extern bool has_the_first_specification;
+        extern context_or_describe* first_specification;
 
 #ifdef USE_FMT_FORMT
         template <typename T, typename = void>
@@ -316,6 +318,12 @@ namespace andy
             {
                 init();
             }
+            ~context_or_describe()
+            {
+                if(first_specification == this) {
+                    andy::tests::run();
+                }
+            }
         public:
             void init()
             {
@@ -347,11 +355,14 @@ namespace andy
 
                 std::cout << std::endl;
 
-                if(!tests::has_the_first_specification) {
-                    andy::tests::current_describe.push_back(m_description);
-                    tests::has_the_first_specification = true;
-                    return;
+                if(tests::first_specification == nullptr) {
+                    tests::first_specification = this;
                 }
+                // if(!tests::has_the_first_specification) {
+                //     andy::tests::current_describe.push_back(m_description);
+                //     tests::has_the_first_specification = true;
+                //     return;
+                // }
 
                 tests::current_describe_level++;
                 andy::tests::current_describe.push_back(m_description);
@@ -369,7 +380,6 @@ namespace andy
         using describe  = context_or_describe;
         using context   = context_or_describe;
         using it        = test;
-        int run();
     }
 };
 
