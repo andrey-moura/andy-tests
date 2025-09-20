@@ -13,6 +13,7 @@ int main(int argc, char* argv[])
     }
 
     std::string_view folder = argv[1];
+    std::vector<std::string> targets;
     bool has_one_cpp = false;
 
     std::filesystem::path tests_folder = std::filesystem::absolute(folder);
@@ -37,6 +38,63 @@ int main(int argc, char* argv[])
                     }
 
                     std::string command = "cmake --build ";
+
+                    if(!has_one_cpp) {
+                        command += build_folder.string();
+                        command += " --target help > ";
+                        command += build_folder.string();
+                        command += "/build.log";
+
+                        if(system(command.c_str())) {
+                            std::cout << "Failed to get help for targets." << std::endl;
+                            return 1;
+                        }
+
+                        std::ifstream file(build_folder.string() + "/build.log");
+                        if(!file.is_open()) {
+                            std::cout << "Failed to open build log for reading." << std::endl;
+                            return 1;
+                        }
+
+                        std::string line;
+
+                        while(std::getline(file, line)) {
+                            std::string_view line_view = line;
+                            while(line_view.size() && isspace(line_view.front())) {
+                                line_view.remove_prefix(1);
+                            }
+                            if(line_view.size() && line_view.starts_with("...") && line_view.ends_with("_spec.o")) {
+                                line_view.remove_prefix(3);
+                                while(line_view.size() && isspace(line_view.front())) {
+                                    line_view.remove_prefix(1);
+                                }
+                                line_view.remove_suffix(2);
+                                size_t pos = line_view.find('/');
+                                while(pos != std::string_view::npos) {
+                                    line_view.remove_prefix(pos + 1);
+                                    pos = line_view.find('/');
+                                }
+                                targets.push_back(std::string(line_view));
+                            }
+                        }
+
+                        file.close();
+                        std::sort(targets.begin(), targets.end());
+                    }
+
+                    if(std::find(targets.begin(), targets.end(), path.stem().string()) == targets.end()) {
+#ifdef __linux__
+// Log as yellow
+                        std::cout << "\033[33m";
+#endif
+                        std::cout << "Skipping " << path.stem().string() << " as it is not part of the CMake build targets." << std::endl;
+#ifdef __linux__
+                        std::cout << "\033[0m";
+#endif
+                        continue;
+                    }
+
+                    command = "cmake --build ";
                     command += build_folder.string();
                     command += " --target ";
                     command += path.stem().string();
