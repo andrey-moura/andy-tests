@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
                         std::filesystem::path log_path = build_folder / "build.log";
                         command += build_folder.string();
                         command += " --target help > ";
-                        command += log_path;
+                        command += log_path.string();
 
                         if(system(command.c_str())) {
                             std::cout << "Failed to get help for targets." << std::endl;
