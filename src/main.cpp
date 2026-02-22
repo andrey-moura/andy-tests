@@ -5,6 +5,14 @@
 #include <thread>
 #include <fstream>
 
+int run_and_log(std::string_view command)
+{
+    std::cout << "running command: " << command << std::endl;
+    int result = system(command.data());
+    std::cout << "command finished with result: " << result << std::endl;
+    return result;
+}
+
 int main(int argc, char* argv[])
 {
     if(argc < 2) {
@@ -45,13 +53,12 @@ int main(int argc, char* argv[])
                         command += build_folder.string();
                         command += " --target help > ";
                         command += log_path.string();
-
-                        if(system(command.c_str())) {
+                        if(run_and_log(command)) {
                             std::cout << "Failed to get help for targets." << std::endl;
                             if(std::filesystem::exists(log_path))
                             {
                                 std::cout << "Log file: " << std::endl;
-                                std::ifstream stream(command);
+                                std::ifstream stream(log_path);
                                 std::string line;
                                 while(std::getline(stream, line)) {
                                     std::cout << line << std::endl;
