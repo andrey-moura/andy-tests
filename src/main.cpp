@@ -41,7 +41,11 @@ int main(int argc, char* argv[])
 
                     if(!has_one_cpp) {
                         command += build_folder.string();
+#ifdef __linux__
                         command += " --target help > ";
+#else
+                        command += "  -- /t:help > ";
+#endif
                         command += build_folder.string();
                         command += "/build.log";
 
