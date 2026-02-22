@@ -34,19 +34,29 @@ int main(int argc, char* argv[])
                 
                         if(!std::filesystem::exists(build_folder)) {
                             std::cout << "Build folder not found. Make sure to call andy-test from where you ran cmake." << std::endl;
+                            return 1;
                         }
                     }
 
                     std::string command = "cmake --build ";
 
                     if(!has_one_cpp) {
+                        std::filesystem::path log_path = build_folder / "build.log";
                         command += build_folder.string();
                         command += " --target help > ";
-                        command += build_folder.string();
-                        command += "/build.log";
+                        command += log_path;
 
                         if(system(command.c_str())) {
                             std::cout << "Failed to get help for targets." << std::endl;
+                            if(std::filesystem::exists(log_path))
+                            {
+                                std::cout << "Log file: " << std::endl;
+                                std::ifstream stream(command);
+                                std::string line;
+                                while(std::getline(stream, line)) {
+                                    std::cout << line << std::endl;
+                                }
+                            }
                             return 1;
                         }
 
