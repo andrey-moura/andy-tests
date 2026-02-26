@@ -45,69 +45,111 @@ int main(int argc, char* argv[])
                             return 1;
                         }
                     }
-
-                    std::string command = "cmake --build ";
-
+                    std::string command;
+                    
                     if(!has_one_cpp) {
+                        bool search_with_project_files = false;
                         std::filesystem::path log_path = build_folder / "build.log";
-                        command += build_folder.string();
-                        command += " --target help > ";
-                        command += log_path.string();
-                        if(run_and_log(command)) {
-                            std::cout << "Failed to get help for targets." << std::endl;
-                            if(std::filesystem::exists(log_path))
-                            {
-                                std::cout << "Log file: " << std::endl;
-                                std::ifstream stream(log_path);
-                                std::string line;
-                                while(std::getline(stream, line)) {
-                                    std::cout << line << std::endl;
+
+                        #ifdef _WIN32
+                            // Check if the Visual Studio was used as the generator
+                            /* **************************************************************** */
+                            /*   Actually, it's too slow. Assumes always using Visual Studio    */
+                            /* **************************************************************** */
+
+                            // std::filesystem::path temp_file = std::filesystem::temp_directory_path() / "cmake_generator_check.txt";
+                            // command = "cmake --system-information | findstr /C:\"CMAKE_GENERATOR\" > " + temp_file.string();
+                            // if(system(command.c_str())) {
+                            //     std::cout << "Failed to get CMake generator information." << std::endl;
+                            //     return 1;
+                            // }
+                            // std::ifstream temp_file_stream(temp_file);
+                            // std::string line;
+                            // while(std::getline(temp_file_stream, line)) {
+                            //     if(line.find("Visual Studio") != std::string::npos) {
+                                    search_with_project_files = true;
+                            //         break;
+                            //     }
+                            // }
+                        #endif
+                        if(search_with_project_files) {
+                            std::filesystem::path projects_folder = build_folder;
+
+                            // List files with .vcxproj extension
+                            for(auto& proj_entry : std::filesystem::directory_iterator(projects_folder)) {
+                                if(proj_entry.is_regular_file() && proj_entry.path().extension() == ".vcxproj") {
+                                    std::string proj_name = proj_entry.path().stem().string();
+                                    if(proj_name.ends_with("_spec")) {
+                                        targets.push_back(proj_name);
+                                    }
                                 }
                             }
-                            return 1;
-                        }
+                        } else {
+                            command = "cmake --build ";
+                            command += build_folder.string();
+                            command += " --target help > ";
+                            command += log_path.string();
 
-                        std::ifstream file(build_folder.string() + "/build.log");
-                        if(!file.is_open()) {
-                            std::cout << "Failed to open build log for reading." << std::endl;
-                            return 1;
-                        }
-
-                        std::string line;
-
-                        while(std::getline(file, line)) {
-                            std::string_view line_view = line;
-                            while(line_view.size() && isspace(line_view.front())) {
-                                line_view.remove_prefix(1);
+                            if(run_and_log(command)) {
+                                std::cout << "Failed to get help for targets." << std::endl;
+                                if(std::filesystem::exists(log_path))
+                                {
+                                    std::cout << "Log file: " << std::endl;
+                                    std::ifstream stream(log_path);
+                                    std::string line;
+                                    while(std::getline(stream, line)) {
+                                        std::cout << line << std::endl;
+                                    }
+                                }
+                                return 1;
                             }
-                            if(line_view.size() && line_view.starts_with("...") && line_view.ends_with("_spec.o")) {
-                                line_view.remove_prefix(3);
+    
+                            std::ifstream file(build_folder.string() + "/build.log");
+                            if(!file.is_open()) {
+                                std::cout << "Failed to open build log for reading." << std::endl;
+                                return 1;
+                            }
+    
+                            std::string line;
+    
+                            while(std::getline(file, line)) {
+                                std::string_view line_view = line;
                                 while(line_view.size() && isspace(line_view.front())) {
                                     line_view.remove_prefix(1);
                                 }
-                                line_view.remove_suffix(2);
-                                size_t pos = line_view.find('/');
-                                while(pos != std::string_view::npos) {
-                                    line_view.remove_prefix(pos + 1);
-                                    pos = line_view.find('/');
+                                if(line_view.size() && line_view.starts_with("...") && line_view.ends_with("_spec.o")) {
+                                    line_view.remove_prefix(3);
+                                    while(line_view.size() && isspace(line_view.front())) {
+                                        line_view.remove_prefix(1);
+                                    }
+                                    line_view.remove_suffix(2);
+                                    size_t pos = line_view.find('/');
+                                    while(pos != std::string_view::npos) {
+                                        line_view.remove_prefix(pos + 1);
+                                        pos = line_view.find('/');
+                                    }
+                                    targets.push_back(std::string(line_view));
                                 }
-                                targets.push_back(std::string(line_view));
                             }
+    
+                            file.close();
                         }
 
-                        file.close();
                         std::sort(targets.begin(), targets.end());
                     }
 
-                    if(std::find(targets.begin(), targets.end(), path.stem().string()) == targets.end()) {
+                    std::string stem = path.stem().string();
+                    if(std::find(targets.begin(), targets.end(), stem) == targets.end()) {
 #ifdef __linux__
 // Log as yellow
                         std::cout << "\033[33m";
 #endif
-                        std::cout << "Skipping " << path.stem().string() << " as it is not part of the CMake build targets." << std::endl;
+                        std::cout << "Skipping " << stem << " as it is not part of the CMake build targets." << std::endl;
 #ifdef __linux__
                         std::cout << "\033[0m";
 #endif
+                        has_one_cpp = true;
+
                         continue;
                     }
 
