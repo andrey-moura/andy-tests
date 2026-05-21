@@ -4,5 +4,5 @@
 
 int main(int argc, char* argv[])
 {
-   return andy::tests::run();
+   return lavi::tests::run();
 }

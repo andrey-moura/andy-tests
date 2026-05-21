@@ -2,13 +2,13 @@
 
 #include <andy/tests.hpp>
 
-using namespace andy;
-using namespace andy::tests;
+using namespace lavi;
+using namespace lavi::tests;
 
-size_t andy::tests::current_describe_level = 0;
-context_or_describe* andy::tests::first_specification = nullptr;
-std::vector<andy::tests::test_result> andy::tests::result_list;
-std::vector<std::string_view> andy::tests::current_describe;
+size_t lavi::tests::current_describe_level = 0;
+context_or_describe* lavi::tests::first_specification = nullptr;
+std::vector<lavi::tests::test_result> lavi::tests::result_list;
+std::vector<std::string_view> lavi::tests::current_describe;
 
 void write_safe_str(std::ostream& out, std::string_view str)
 {
@@ -29,7 +29,7 @@ void write_safe_str(std::ostream& out, std::string_view str)
     }
 }
 
-int andy::tests::run()
+int lavi::tests::run()
 {
     auto start = std::chrono::high_resolution_clock::now();
     tests::current_describe_level++;
@@ -65,8 +65,8 @@ int andy::tests::run()
             write_safe_str(file, result.error_message);
             file << "\" />" << std::endl;
 
-            andy::console::log_error("{} {}", result.describes, result.description);
-            andy::console::log_error("{}", result.error_message);
+            lavi::console::log_error("{} {}", result.describes, result.description);
+            lavi::console::log_error("{}", result.error_message);
         }
         file << "\t\t</testcase>" << std::endl;
     }
@@ -75,7 +75,7 @@ int andy::tests::run()
 
     file << "\t</testsuite>" << std::endl;
 
-    //andy::console::log("{} examples. {} passed, {} failures", passed + failed, passed, failed);
+    //lavi::console::log("{} examples. {} passed, {} failures", passed + failed, passed, failed);
 
     return failed;
 }

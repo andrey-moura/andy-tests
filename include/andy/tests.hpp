@@ -7,7 +7,7 @@
 
 #include <andy/console.hpp>
 
-namespace andy
+namespace lavi
 {
     namespace tests
     {
@@ -211,11 +211,11 @@ namespace andy
                     std::cout << "  ";
                 }
 
-                andy::console::log_warning(description);
+                lavi::console::log_warning(description);
                 test_result result;
                 result.description = std::string(description);
                 result.passed = true;
-                andy::tests::result_list.push_back(result);
+                lavi::tests::result_list.push_back(result);
             }
         };
         class test
@@ -282,7 +282,7 @@ namespace andy
                     std::cout << "  ";
                 }
 
-                for(const std::string_view& sv : andy::tests::current_describe)
+                for(const std::string_view& sv : lavi::tests::current_describe)
                 {
                     if(result.describes.size()) {
                         result.describes.push_back(' ');
@@ -291,9 +291,9 @@ namespace andy
                 }
 
                 if(result.passed) {
-                    andy::console::log_success("{}", m_description);
+                    lavi::console::log_success("{}", m_description);
                 } else {
-                    andy::console::log_error("{}", m_description);
+                    lavi::console::log_error("{}", m_description);
                 }
 
                 tests::result_list.push_back(result);
@@ -321,7 +321,7 @@ namespace andy
             ~context_or_describe()
             {
                 if(first_specification == this) {
-                    andy::tests::run();
+                    lavi::tests::run();
                 }
             }
         public:
@@ -359,18 +359,18 @@ namespace andy
                     tests::first_specification = this;
                 }
                 // if(!tests::has_the_first_specification) {
-                //     andy::tests::current_describe.push_back(m_description);
+                //     lavi::tests::current_describe.push_back(m_description);
                 //     tests::has_the_first_specification = true;
                 //     return;
                 // }
 
                 tests::current_describe_level++;
-                andy::tests::current_describe.push_back(m_description);
+                lavi::tests::current_describe.push_back(m_description);
 
                 m_test_function();
 
                 tests::current_describe_level--;
-                andy::tests::current_describe.pop_back();
+                lavi::tests::current_describe.pop_back();
             }
         public:
             std::string_view m_description;
@@ -383,7 +383,7 @@ namespace andy
     }
 };
 
-using namespace andy::tests;
+using namespace lavi::tests;
 
 #define given auto
 #define subject(x) auto subject = x
