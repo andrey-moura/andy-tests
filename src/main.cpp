@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
     file.close();
 
     for(auto& path : test_files) {
-        if(path.extension() == ".andy") {
+        if(path.extension() == ".lv") {
             std::string command;
             std::filesystem::path andy_executable_path = argv[0];
             andy_executable_path.replace_filename("andy");
